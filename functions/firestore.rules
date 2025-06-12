@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Passes collection
+    match /passes/{passId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.studentId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.studentId;
+      allow delete: if false;  // No deletion allowed
+    }
+    
+    // Event logs collection
+    match /eventLogs/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.studentId;
+      allow update, delete: if false;  // No updates or deletions allowed
+    }
+  }
+} 

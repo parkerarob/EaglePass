@@ -14,7 +14,7 @@
 
 ---
 
-## 🚀 Milestone 1 — Firebase Scaffold
+## ✅ Milestone 1 — Firebase Scaffold
 
 - Scaffold `/functions/` directory with Cloud Functions skeleton:
     - createPass
@@ -36,7 +36,7 @@
 
 ---
 
-## 🚀 Milestone 2 — Functional Cloud Implementation
+## ✅ Milestone 2 — Functional Cloud Implementation
 
 - Fully implement Cloud Functions:
     - createPass
@@ -63,5 +63,58 @@
 
 - DO NOT add unscoped features not defined in PRD or core.rules.
 
-- Pass all Firebase Emulator Suite tests.
+- All Cloud Functions and security rules are covered by Jest + @firebase/rules-unit-testing (emulator optional).
+
+---
+
+## 🚀 Milestone 3 — Front-end MVP & Component Testing
+
+### Acceptance Criteria
+
+**Routing & Navigation**
+- ✅ React Router v7 integration with routes: `/dashboard`, `/pass/new`, `/pass/:id`
+- ✅ Navigation header with user info and sign-out functionality
+- ✅ Proper route protection and redirects
+
+**Student UI Flow**
+- ✅ Dashboard with "Create New Pass" and "Staff View" toggle
+- ✅ NewPassPage with form validation and location selection
+- ✅ PassDetailPage with live status and action buttons (Declare Departure/Return)
+- ✅ Error handling and loading states throughout
+
+**Staff Dashboard Stub**
+- ✅ Staff view toggle showing active passes list
+- ✅ Pass details with status badges and timestamps
+- ✅ View details links to individual pass pages
+
+**Typed Firebase Service Layer**
+- ✅ `createPass(data)` - calls Cloud Function with typed interfaces
+- ✅ `declareDeparture(passId)` - calls Cloud Function with error handling
+- ✅ `declareReturn(passId)` - calls Cloud Function with error handling
+- ✅ All service functions use strict TypeScript types
+
+**Component Testing**
+- ✅ Jest + @testing-library/react test suite for all pages
+- ✅ Mocked Firebase calls (no network requests in tests)
+- ✅ Form validation, user interactions, and error states tested
+- ✅ Target ≥80% statement coverage on `src/` directory
+
+**Technical Requirements**
+- ✅ Strict TypeScript compliance (zero `any` types)
+- ✅ All existing backend tests continue to pass
+- ✅ CI workflow remains green (`npm ci`, `npm run type-check`, `npm test`)
+- ✅ Clean production build (`npm run build`)
+
+**Documentation**
+- ✅ Updated coverage badge reflecting combined front-end + back-end coverage
+- ✅ Milestone 2 marked as "Done" in this document
+- ✅ No emulator dependencies introduced
+
+### Deliverables
+
+- Student UI flow: create pass → live status → declare departure → declare return
+- Staff dashboard stub listing active passes
+- Comprehensive component test suite with mocked Firebase calls
+- Updated documentation and coverage reporting
+- All repo invariants maintained (green CI, no emulator scripts)
 
