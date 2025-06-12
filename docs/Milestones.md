@@ -36,10 +36,32 @@
 
 ---
 
-## 🚧 Milestone 2 — Functional Cloud Scaffold (future)
+## 🚀 Milestone 2 — Functional Cloud Implementation
 
-- Full data writes & reads
-- State machine wiring
-- Validation rules
-- Firestore security rules
+- Fully implement Cloud Functions:
+    - createPass
+    - declareDeparture
+    - declareReturn
+
+- Implement Firestore writes for passes and eventLogs per PRD data models.
+
+- Implement full state machine logic:
+    - Status: OPEN → CLOSED
+    - State: IN_CLASS → IN_TRANSIT → IN_CLASS
+
+- Implement immutable event logging into eventLogs on every transition.
+
+- Ensure all write operations are performed inside Cloud Functions (strict write model).
+
+- Wire frontend pages to functional Cloud Functions via HTTPS Callable Functions.
+
+- Wire Firebase Auth (Google SSO) fully into login flow.
+
+- Implement basic error handling and type safety throughout.
+
+- DO NOT build full teacher/admin functionality yet — student-only MVP.
+
+- DO NOT add unscoped features not defined in PRD or core.rules.
+
+- Pass all Firebase Emulator Suite tests.
 
