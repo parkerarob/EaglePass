@@ -22,9 +22,14 @@ function App() {
 
   const handleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      console.log('Starting Google Sign-In...');
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Sign-in successful:', result.user);
     } catch (error) {
       console.error('Sign in failed:', error);
+      // Show user-friendly error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Sign in failed: ${errorMessage}`);
     }
   };
 

@@ -32,6 +32,10 @@ functions/coverage/
 
 # Environment files
 .env.local
+.env.production
+
+# Firebase deployment artifacts
+.firebase/
 
 # Temporary scripts
 reset-node-robpro.sh
