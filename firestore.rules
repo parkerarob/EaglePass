@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only allow reads/writes via Cloud Functions (placeholder)
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // All writes via Cloud Functions
+    }
+  }
+} 
