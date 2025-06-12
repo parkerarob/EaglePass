@@ -1,51 +1,115 @@
-import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getAuth } from 'firebase/auth';
+import { initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
+import * as path from 'path';
+import { Pass, EventLog } from '../src/types';
+import { Timestamp } from 'firebase-admin/firestore';
+import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-describe('createPass Cloud Function', () => {
-  let testEnv: any;
-  let studentId: string;
+// Mock firebase functions and admin
+jest.mock('firebase-functions');
+jest.mock('firebase-admin');
 
-  beforeAll(async () => {
-    testEnv = await initializeTestEnvironment({
-      projectId: 'eaglepass-mvp',
-      firestore: { rules: readFileSync('../firestore.rules', 'utf8') },
-    });
-    studentId = 'student-uid-1';
+let testEnv: RulesTestEnvironment;
+
+beforeAll(async () => {
+  testEnv = await initializeTestEnvironment({
+    projectId: 'eaglepass-dev',
+    firestore: {
+      rules: readFileSync(path.resolve(__dirname, '../firestore.rules'), 'utf8'),
+    },
   });
+});
 
-  afterAll(async () => {
-    await testEnv.cleanup();
-  });
+afterAll(async () => {
+  await testEnv.cleanup();
+});
 
-  it('should create a pass and eventLog (happy path)', async () => {
-    const context = testEnv.authenticatedContext(studentId);
-    const wrapped = testEnv.wrap(require('../src/index').createPass);
-    const data = {
-      studentId,
-      scheduleLocationId: 'class-1',
-      destinationLocationId: 'bathroom-1',
-    };
-    const result = await wrapped(data, { auth: { uid: studentId } });
+beforeEach(async () => {
+  await testEnv.clearFirestore();
+});
+
+describe('createPass', () => {
+  const mockData = {
+    studentId: 'student123',
+    scheduleLocationId: 'location1',
+    destinationLocationId: 'location2'
+  };
+
+  const mockContext: functions.https.CallableContext = {
+    auth: {
+      uid: 'student123',
+      token: {} as any
+    },
+    rawRequest: {} as any
+  };
+
+  it('successfully creates new pass and eventLog documents', async () => {
+    const { createPass } = require('../src');
+    const result = await createPass(mockData, mockContext);
     expect(result).toHaveProperty('passId');
-    // Check Firestore for pass and eventLog
-    const db = admin.firestore();
-    const passSnap = await db.collection('passes').doc(result.passId).get();
-    expect(passSnap.exists).toBe(true);
-    const eventLogs = await db.collection('eventLogs').where('passId', '==', result.passId).get();
-    expect(eventLogs.size).toBe(1);
+
+    // Verify pass document
+    const passDoc = await testEnv.unauthenticatedContext().firestore()
+      .collection('passes')
+      .doc(result.passId)
+      .get();
+    
+    expect(passDoc.exists).toBe(true);
+    const passData = passDoc.data() as Pass;
+    expect(passData).toMatchObject({
+      passId: result.passId,
+      studentId: mockData.studentId,
+      scheduleLocationId: mockData.scheduleLocationId,
+      destinationLocationId: mockData.destinationLocationId,
+      status: 'OPEN',
+      state: 'IN_TRANSIT',
+      legId: 1
+    });
+    expect(passData.createdAt).toBeInstanceOf(Timestamp);
+    expect(passData.lastUpdatedAt).toBeInstanceOf(Timestamp);
+
+    // Verify eventLog document
+    const eventLogs = await testEnv.unauthenticatedContext().firestore()
+      .collection('eventLogs')
+      .where('passId', '==', result.passId)
+      .get();
+    
+    expect(eventLogs.empty).toBe(false);
+    const eventLog = eventLogs.docs[0].data() as EventLog;
+    expect(eventLog).toMatchObject({
+      passId: result.passId,
+      studentId: mockData.studentId,
+      actorId: mockData.studentId,
+      eventType: 'LEFT_CLASS'
+    });
+    expect(eventLog.timestamp).toBeInstanceOf(Timestamp);
   });
 
-  it('should fail if UID does not match studentId', async () => {
-    const context = testEnv.authenticatedContext('other-uid');
-    const wrapped = testEnv.wrap(require('../src/index').createPass);
-    const data = {
-      studentId,
-      scheduleLocationId: 'class-1',
-      destinationLocationId: 'bathroom-1',
+  it('fails if authenticated UID does not match studentId', async () => {
+    const { createPass } = require('../src');
+    const invalidContext: functions.https.CallableContext = {
+      auth: {
+        uid: 'different_student',
+        token: {} as any
+      },
+      rawRequest: {} as any
     };
-    await expect(wrapped(data, { auth: { uid: 'other-uid' } })).rejects.toThrow();
+
+    await expect(createPass(mockData, invalidContext))
+      .rejects
+      .toThrow('permission-denied');
+  });
+
+  it('fails if not authenticated', async () => {
+    const { createPass } = require('../src');
+    const unauthContext: functions.https.CallableContext = {
+      auth: undefined,
+      rawRequest: {} as any
+    };
+
+    await expect(createPass(mockData, unauthContext))
+      .rejects
+      .toThrow('permission-denied');
   });
 }); 

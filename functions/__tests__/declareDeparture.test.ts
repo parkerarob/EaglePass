@@ -1,53 +1,158 @@
-import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import { initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
+import * as path from 'path';
+import { Pass, EventLog } from '../src/types';
+import { Timestamp } from 'firebase-admin/firestore';
+import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-describe('declareDeparture Cloud Function', () => {
-  let testEnv: any;
-  let studentId: string;
-  let passId: string;
+// Mock firebase functions and admin
+jest.mock('firebase-functions');
+jest.mock('firebase-admin');
 
-  beforeAll(async () => {
-    testEnv = await initializeTestEnvironment({
-      projectId: 'eaglepass-mvp',
-      firestore: { rules: readFileSync('../firestore.rules', 'utf8') },
-    });
-    studentId = 'student-uid-2';
-    // Create a pass for testing
-    const passRef = admin.firestore().collection('passes').doc();
-    passId = passRef.id;
-    await passRef.set({
+let testEnv: RulesTestEnvironment;
+
+beforeAll(async () => {
+  testEnv = await initializeTestEnvironment({
+    projectId: 'eaglepass-dev',
+    firestore: {
+      rules: readFileSync(path.resolve(__dirname, '../firestore.rules'), 'utf8'),
+    },
+  });
+});
+
+afterAll(async () => {
+  await testEnv.cleanup();
+});
+
+beforeEach(async () => {
+  await testEnv.clearFirestore();
+});
+
+describe('declareDeparture', () => {
+  const studentId = 'student123';
+  const passId = 'pass123';
+  
+  // Setup initial pass document
+  beforeEach(async () => {
+    const now = admin.firestore.Timestamp.now();
+    await testEnv.unauthenticatedContext().firestore()
+      .collection('passes')
+      .doc(passId)
+      .set({
+        passId,
+        studentId,
+        scheduleLocationId: 'location1',
+        destinationLocationId: 'location2',
+        status: 'OPEN',
+        state: 'IN_CLASS',
+        legId: 1,
+        createdAt: now,
+        lastUpdatedAt: now
+      });
+  });
+
+  const mockData = {
+    passId,
+    studentId
+  };
+
+  const mockContext: functions.https.CallableContext = {
+    auth: {
+      uid: studentId,
+      token: {} as any
+    },
+    rawRequest: {} as any
+  };
+
+  it('successfully updates pass state and logs event', async () => {
+    const { declareDeparture } = require('../src');
+    const result = await declareDeparture(mockData, mockContext);
+    expect(result).toHaveProperty('passId');
+
+    // Verify pass document update
+    const passDoc = await testEnv.unauthenticatedContext().firestore()
+      .collection('passes')
+      .doc(passId)
+      .get();
+    
+    expect(passDoc.exists).toBe(true);
+    const passData = passDoc.data() as Pass;
+    expect(passData).toMatchObject({
       passId,
       studentId,
-      scheduleLocationId: 'class-2',
-      destinationLocationId: 'nurse-1',
-      status: 'OPEN',
-      state: 'IN_CLASS',
-      legId: 1,
-      createdAt: admin.firestore.Timestamp.now(),
-      lastUpdatedAt: admin.firestore.Timestamp.now(),
+      state: 'IN_TRANSIT',
+      status: 'OPEN'
     });
+    expect(passData.lastUpdatedAt).toBeInstanceOf(Timestamp);
+
+    // Verify eventLog document
+    const eventLogs = await testEnv.unauthenticatedContext().firestore()
+      .collection('eventLogs')
+      .where('passId', '==', passId)
+      .get();
+    
+    expect(eventLogs.empty).toBe(false);
+    const eventLog = eventLogs.docs[0].data() as EventLog;
+    expect(eventLog).toMatchObject({
+      passId,
+      studentId,
+      actorId: studentId,
+      eventType: 'LEFT_CLASS'
+    });
+    expect(eventLog.timestamp).toBeInstanceOf(Timestamp);
   });
 
-  afterAll(async () => {
-    await testEnv.cleanup();
+  it('fails if authenticated UID does not match studentId', async () => {
+    const { declareDeparture } = require('../src');
+    const invalidContext: functions.https.CallableContext = {
+      auth: {
+        uid: 'different_student',
+        token: {} as any
+      },
+      rawRequest: {} as any
+    };
+
+    await expect(declareDeparture(mockData, invalidContext))
+      .rejects
+      .toThrow('permission-denied');
   });
 
-  it('should update pass state and log event (happy path)', async () => {
-    const wrapped = testEnv.wrap(require('../src/index').declareDeparture);
-    const data = { passId, studentId };
-    const result = await wrapped(data, { auth: { uid: studentId } });
-    expect(result).toHaveProperty('passId', passId);
-    const db = admin.firestore();
-    const passSnap = await db.collection('passes').doc(passId).get();
-    expect(passSnap.data()?.state).toBe('IN_TRANSIT');
-    const eventLogs = await db.collection('eventLogs').where('passId', '==', passId).get();
-    expect(eventLogs.size).toBe(1);
+  it('fails if not authenticated', async () => {
+    const { declareDeparture } = require('../src');
+    const unauthContext: functions.https.CallableContext = {
+      auth: undefined,
+      rawRequest: {} as any
+    };
+
+    await expect(declareDeparture(mockData, unauthContext))
+      .rejects
+      .toThrow('permission-denied');
   });
 
-  it('should fail if UID does not match studentId', async () => {
-    const wrapped = testEnv.wrap(require('../src/index').declareDeparture);
-    const data = { passId, studentId };
-    await expect(wrapped(data, { auth: { uid: 'other-uid' } })).rejects.toThrow();
+  it('fails if pass does not exist', async () => {
+    const { declareDeparture } = require('../src');
+    const nonExistentData = {
+      passId: 'nonexistent',
+      studentId
+    };
+
+    await expect(declareDeparture(nonExistentData, mockContext))
+      .rejects
+      .toThrow('not-found');
+  });
+
+  it('fails if pass is not open', async () => {
+    const { declareDeparture } = require('../src');
+    
+    // Update pass to closed state
+    await testEnv.unauthenticatedContext().firestore()
+      .collection('passes')
+      .doc(passId)
+      .update({ status: 'CLOSED' });
+
+    await expect(declareDeparture(mockData, mockContext))
+      .rejects
+      .toThrow('failed-precondition');
   });
 }); 
