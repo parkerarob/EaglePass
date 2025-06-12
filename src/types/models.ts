@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 // Passes model
 export interface Pass {
   passId: string;
@@ -7,8 +9,8 @@ export interface Pass {
   status: 'OPEN' | 'CLOSED';
   state: 'IN_CLASS' | 'IN_TRANSIT';
   legId: number;
-  createdAt: FirebaseFirestore.Timestamp;
-  lastUpdatedAt: FirebaseFirestore.Timestamp;
+  createdAt: Timestamp;
+  lastUpdatedAt: Timestamp;
 }
 
 // EventLogs model
@@ -17,6 +19,6 @@ export interface EventLog {
   passId: string;
   studentId: string;
   actorId: string;
-  timestamp: FirebaseFirestore.Timestamp;
+  timestamp: Timestamp;
   eventType: 'LEFT_CLASS' | 'RETURNED_TO_CLASS';
 } 

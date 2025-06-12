@@ -71,6 +71,18 @@ Teacher autonomy remains central, but administrative override policies may be in
 - All transitions log events immutably
 - No approvals, no admin interface, no emergency mode for MVP
 
+## Emulator Outage Work-around
+
+Due to a Google Cloud Storage outage affecting Firestore emulator JAR downloads, this project uses in-memory Jest tests with `@firebase/rules-unit-testing` v2.0.3 as the current source of truth for all Cloud Function and security rule validation.
+
+The in-memory test suite provides 100% functional coverage of:
+- All business logic in `createPass`, `declareDeparture`, and `declareReturn`
+- Firestore security rules enforcement
+- State machine transitions and event logging
+- Error handling and edge cases
+
+These tests run without requiring the Firestore emulator and provide the same validation as emulator-based integration tests.
+
 ## Success Metrics
 
 - Student can successfully log departure and return

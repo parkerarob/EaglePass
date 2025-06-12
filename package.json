@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "cd functions && npm test",
+    "test:frontend": "jest",
+    "test:all": "npm run test:frontend && npm test",
     "type-check": "tsc --noEmit",
     "prepare": "husky"
   },
@@ -18,7 +20,8 @@
     "firebase-admin": "^11.0.0",
     "firebase-functions": "^4.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
@@ -37,8 +40,11 @@
     "firebase-functions-test": "^0.3.0",
     "globals": "^16.0.0",
     "husky": "^9.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.5.5",
     "tailwindcss": "^3.4.3",
+    "ts-jest": "^29.2.5",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5"
@@ -47,7 +53,43 @@
     "preset": "ts-jest",
     "testEnvironment": "jsdom",
     "setupFilesAfterEnv": [
-      "@testing-library/jest-dom/extend-expect"
-    ]
+      "<rootDir>/src/setupTests.ts"
+    ],
+    "moduleNameMapping": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.{ts,tsx}",
+      "<rootDir>/src/**/*.{test,spec}.{ts,tsx}"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/main.tsx",
+      "!src/vite-env.d.ts",
+      "!src/services/firebase.ts"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": ["ts-jest", {
+        "tsconfig": {
+          "jsx": "react-jsx",
+          "esModuleInterop": true,
+          "allowSyntheticDefaultImports": true,
+          "module": "esnext"
+        }
+      }]
+    },
+    "globals": {
+      "import.meta": {
+        "env": {
+          "VITE_FIREBASE_API_KEY": "test-api-key",
+          "VITE_FIREBASE_AUTH_DOMAIN": "test.firebaseapp.com",
+          "VITE_FIREBASE_PROJECT_ID": "test-project",
+          "VITE_FIREBASE_STORAGE_BUCKET": "test.appspot.com",
+          "VITE_FIREBASE_MESSAGING_SENDER_ID": "123456789",
+          "VITE_FIREBASE_APP_ID": "test-app-id"
+        }
+      }
+    }
   }
 }
