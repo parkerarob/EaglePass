@@ -57,8 +57,36 @@ A modern hall pass management system for schools, built with React 18, TypeScrip
 4. **Start development server**
    ```bash
    npm run dev        # Local development with emulators
-   npm run dev:remote # Development against live Firebase
+   npm run dev:live   # Development against live Blaze project
    ```
+
+## 🌱 Seeding the Blaze Project
+
+To populate the live Firebase project with test data:
+
+1. **Generate a service account key**
+   - Go to [Firebase Console](https://console.firebase.google.com)
+   - Select your project
+   - Go to Project Settings > Service Accounts
+   - Click "Generate New Private Key"
+   - Save the JSON file securely (e.g., `dev-sa.json`)
+
+2. **Set up credentials**
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/dev-sa.json
+   ```
+
+3. **Run the seed script**
+   ```bash
+   npm run seed
+   ```
+
+This will create:
+- Two test users: `alice@example.com` and `bob@example.com` (password: `Test123!`)
+- Two active passes linked to these users
+- All data will be created in your live Blaze project
+
+**Note:** The seed script is designed to be idempotent - running it multiple times is safe.
 
 ## 🧪 Testing
 
