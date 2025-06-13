@@ -105,6 +105,13 @@
 - ✅ CI workflow remains green (`npm ci`, `npm run type-check`, `npm test`)
 - ✅ Clean production build (`npm run build`)
 
+**Blaze Project Setup**
+- ✅ Upgrade Firebase project to Blaze (pay-as-you-go) plan
+- ✅ Create seed script for test users and passes
+- ✅ Add dev helper scripts for live development
+- ✅ Document service account setup process
+- ✅ Ensure tests remain offline/in-memory
+
 **Documentation**
 - ✅ Updated coverage badge reflecting combined front-end + back-end coverage
 - ✅ Milestone 2 marked as "Done" in this document
@@ -117,4 +124,5 @@
 - Comprehensive component test suite with mocked Firebase calls
 - Updated documentation and coverage reporting
 - All repo invariants maintained (green CI, no emulator scripts)
+- Seed script for populating live Blaze project with test data
 
