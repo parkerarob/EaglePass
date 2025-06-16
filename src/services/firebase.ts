@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import { getAnalytics } from 'firebase/analytics';
 
@@ -24,8 +24,8 @@ try {
   throw error;
 }
 
-// Initialize services
-let auth: Auth, db, functions, analytics;
+// Initialize servicesq
+let auth: Auth, db: Firestore, functions, analytics;
 try {
   auth = getAuth(app);
   db = getFirestore(app);

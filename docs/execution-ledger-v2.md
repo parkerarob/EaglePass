@@ -15,4 +15,5 @@
 |------|-----------|--------|-----------|----------|----------------|--------------------|-------|
 | 0 | Project Bootstrap Initialization | ✅ Completed | 2025-06-16T12:34Z | JD | — | None | All checks passed |
 | 1 | Authentication & Authorization | ✅ Completed | 2024-06-16T00:00Z | Operator | — | None | All PRD requirements met for MVP. |
+| 2 | Firestore Data Models & Schema Definitions | ✅ Completed | 2024-06-16T19:05Z | Operator | — | None | All requirements, tests, and governance steps satisfied. |
 
