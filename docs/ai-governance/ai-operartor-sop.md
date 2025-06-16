@@ -100,3 +100,34 @@ This document defines the roles, responsibilities, procedures, and constraints f
 ## Document Authority
 
 This SOP is governed by the AI Governance Charter. Any modifications require Governance Committee approval.
+
+## Task Completion Workflow
+
+1. **Complete the Task**
+   - Implement all requirements as defined in the master task queue and PRD.
+   - Ensure all code, models, and documentation are in place.
+
+2. **Push to GitHub**
+   - Commit and push the completed work to the appropriate branch.
+
+3. **Complete All Required Testing**
+   - Run and pass all unit, integration, and security tests.
+   - Use CI/CD automation where possible.
+
+4. **Peer Review (if applicable)**
+   - Submit a pull request for review and approval.
+
+5. **Push Stable to GitHub and Tag**
+   - Merge to main branch.
+   - Tag the release (e.g., `v1.0.0-taskX-complete`).
+
+6. **Update Documentation and Execution Ledger**
+   - Mark the task as complete in the execution ledger.
+   - Update any relevant documentation.
+   - Note any important changes, blockers, or risk signals.
+
+7. **Security & Linting Checks**
+   - Run security scans and linting/formatting checks before tagging.
+
+8. **Move to the Next Task**
+   - Only after all the above are complete and stable.
