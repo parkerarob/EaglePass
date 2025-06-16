@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+    
+    function isDev() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DEV';
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'TEACHER';
+    }
+    
+    function isSupportStaff() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPPORT_STAFF';
+    }
+    
+    function isStudent() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'STUDENT';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isDev());
+      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isDev());
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isDev());
+      allow delete: if isAdmin() || isDev();
+    }
+
+    // Locations collection
+    match /locations/{locationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isDev() || isTeacher() || isSupportStaff();
+    }
+
+    // Passes collection
+    match /passes/{passId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (isStudent() || isTeacher() || isSupportStaff());
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        isDev() || 
+        isTeacher() || 
+        isSupportStaff() || 
+        (isStudent() && resource.data.studentId == request.auth.uid)
+      );
+      allow delete: if isAdmin() || isDev();
+    }
+
+    // Movement states collection
+    match /movement-states/{stateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        isAdmin() || 
+        isDev() || 
+        isTeacher() || 
+        isSupportStaff() || 
+        (isStudent() && resource.data.userId == request.auth.uid)
+      );
+    }
+  }
+} 
