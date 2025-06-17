@@ -3,8 +3,9 @@
 
 // --- USERS COLLECTION ---
 export interface User {
-  id: string; // UID
-  name: string;
+  id: string; // Corresponds to Firebase Auth UID
+  displayName: string;
+  email?: string;
   role: UserRole;
   assignment?: string; // e.g., class, group, or location
   restrictions?: string[];

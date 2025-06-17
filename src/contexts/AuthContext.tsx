@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/services/firebase';
-import { User, UserRole } from '@/types';
+import { User, UserRole } from '@/models/firestoreModels';
 import * as authService from '@/services/auth';
 
 interface AuthContextType {
@@ -30,15 +30,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user: FirebaseUser | null) => {
       if (user) {
-        // TODO: Fetch user data from Firestore
-        // For now, create a basic user object
+        // This is a temporary user object. In a real app, you would fetch
+        // the full user profile from Firestore here.
         setCurrentUser({
           id: user.uid,
           email: user.email || '',
-          displayName: user.displayName || '',
-          role: UserRole.STUDENT, // Default role, will be updated from Firestore
-          createdAt: new Date(),
-          updatedAt: new Date()
+          displayName: user.displayName || 'Anonymous',
+          role: UserRole.STUDENT, // Default role
+          createdAt: new Date().toISOString(),
+          lastUpdatedAt: new Date().toISOString(),
+          schemaVersion: 1,
         });
       } else {
         setCurrentUser(null);
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle: authService.signInWithGoogle,
     signInWithEmail: authService.signInWithEmail,
     signUpWithEmail: authService.signUpWithEmail,
-    signOut: authService.signOut
+    signOut: authService.signOut,
   };
 
   return (

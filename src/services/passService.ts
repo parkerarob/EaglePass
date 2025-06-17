@@ -38,7 +38,7 @@ export async function createPass(passData: Omit<Pass, 'id' | 'status' | 'state' 
     if (active) throw new Error('Student already has an active pass');
 
     const passesRef = collection(db, PASSES_COLLECTION).withConverter(passConverter);
-    const newPass = {
+    const newPassData = {
       ...passData,
       status: 'OPEN',
       state: 'OUT',
@@ -46,8 +46,9 @@ export async function createPass(passData: Omit<Pass, 'id' | 'status' | 'state' 
       lastUpdatedAt: new Date().toISOString(),
       schemaVersion: 1,
     } as Omit<Pass, 'id'>;
-    const docRef = await addDoc(passesRef, newPass);
-    const pass: Pass = { ...newPass, id: docRef.id };
+    const docRef = doc(passesRef); // Create a new doc reference
+    transaction.set(docRef, newPassData);
+    const pass: Pass = { ...newPassData, id: docRef.id };
 
     // Log to EventLog
     const eventLogRef = collection(db, EVENT_LOGS_COLLECTION).withConverter(eventLogConverter);

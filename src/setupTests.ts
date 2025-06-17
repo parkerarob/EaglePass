@@ -1,8 +1,4 @@
-import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+// This file is used to set up testing for Vitest with React Testing Library.
+// It extends the 'expect' functionality from Vitest with matchers from jest-dom.
 
-// Automatically cleanup after each test
-afterEach(() => {
-  cleanup();
-}); 
+import '@testing-library/jest-dom';
