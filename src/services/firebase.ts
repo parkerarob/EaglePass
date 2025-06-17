@@ -24,7 +24,7 @@ try {
   throw error;
 }
 
-// Initialize servicesq
+// Initialize servicesqqq
 let auth: Auth, db: Firestore, functions, analytics;
 try {
   auth = getAuth(app);
