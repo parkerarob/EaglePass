@@ -28,7 +28,6 @@ const createTimestamp = (milliseconds: number) =>
 
 const NOW = createTimestamp(Date.now());
 const EARLIER = createTimestamp(Date.now() - 60000); // 1 minute ago
-const LATER = createTimestamp(Date.now() + 60000); // 1 minute from now
 
 describe('Zod Schemas', () => {
   describe('Enum Schemas', () => {
