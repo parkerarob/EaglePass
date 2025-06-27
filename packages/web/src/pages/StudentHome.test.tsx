@@ -3,7 +3,7 @@
  * Comprehensive tests for student dashboard functionality
  */
 
-// --- Firebase and hook mocks (per firebase-mocking-best-practices, vitest-mock-debugging) ---
+// --- Firebase and hook mocks (per react-testing-planning, vitest-mock-debugging) ---
 vi.mock('../hooks/useAuth');
 vi.mock('../lib/database-service');
 vi.mock('../lib/firebase', () => ({ db: {} }));
