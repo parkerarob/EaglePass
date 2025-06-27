@@ -292,7 +292,9 @@ export const PassService = {
     await PassService.updatePass(passId, {
       status: 'closed',
       closedAt: now,
-      totalDuration: Math.round((now.toMillis() - pass.openedAt.toMillis()) / 60000)
+      totalDuration: Math.round((now.toMillis() - pass.openedAt.toMillis()) / 60000),
+      escalationLevel: null,
+      escalationTriggeredAt: null
     });
   },
 

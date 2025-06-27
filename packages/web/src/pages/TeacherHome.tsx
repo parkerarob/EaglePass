@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
+import { EscalationStats, EscalationBadge } from '../components/EscalationDisplay';
 import { useAuth } from '../hooks/useAuth';
+import { useEscalation } from '../hooks/useEscalation';
 import { PassService, LocationService, RealtimeService } from '../lib/database-service';
 import type { Pass, Location } from '../lib/database';
 
@@ -12,6 +14,7 @@ interface PassAction {
 
 export default function TeacherHome() {
   const { profile, loading: authLoading } = useAuth();
+  const { startMonitoring } = useEscalation();
   const [activePasses, setActivePasses] = useState<Pass[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
@@ -48,11 +51,15 @@ export default function TeacherHome() {
       setEscalationAlerts(passes);
     });
 
+    // Start escalation monitoring
+    const cleanupMonitoring = startMonitoring();
+
     return () => {
       unsubscribeActive();
       unsubscribeAlerts();
+      if (cleanupMonitoring) cleanupMonitoring();
     };
-  }, [profile]);
+  }, [profile, startMonitoring]);
 
   // Load locations
   useEffect(() => {
@@ -312,6 +319,11 @@ export default function TeacherHome() {
             </div>
           </div>
 
+          {/* Escalation Overview */}
+          <div className="mb-6">
+            <EscalationStats />
+          </div>
+
           {/* Controls */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -422,6 +434,7 @@ export default function TeacherHome() {
                             <span className="text-sm text-gray-900 capitalize">
                               {pass.escalationLevel || pass.status}
                             </span>
+                            <EscalationBadge pass={pass} className="ml-2" />
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
