@@ -32,4 +32,4 @@ jobs:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
       - name: Deploy to Firebase Hosting (dev)
-        run: firebase deploy --only hosting --project dev 
+        run: firebase deploy --only hosting --project eaglepass-dev 
