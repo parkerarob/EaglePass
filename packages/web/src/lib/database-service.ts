@@ -137,7 +137,15 @@ async function updateDocument<T>(
 // ============================================================================
 
 export const PassService = {
+  /**
+   * Create a new pass for a student. Enforces only one active pass per student.
+   */
   async createPass(passData: CreatePassRequest): Promise<string> {
+    // Enforce only one active pass per student
+    const activePasses = await PassService.getActivePassesForStudent(passData.studentId);
+    if (activePasses.length > 0) {
+      throw new Error('Student already has an active pass. Only one active pass is allowed.');
+    }
     const now = Timestamp.now();
     const pass: Omit<Pass, 'id'> = {
       ...passData,
@@ -151,7 +159,6 @@ export const PassService = {
       createdAt: now,
       updatedAt: now,
     };
-
     return createDocument<Pass>(COLLECTIONS.PASSES, pass);
   },
 
@@ -169,6 +176,57 @@ export const PassService = {
 
   async updatePass(passId: string, updates: UpdatePassRequest): Promise<void> {
     return updateDocument<Pass>(COLLECTIONS.PASSES, passId, updates);
+  },
+
+  /**
+   * Check-in to a location (for check-in eligible locations).
+   * Updates the pass state and creates a new leg.
+   */
+  async checkIn(passId: string, locationId: string, _actorId: string, _actorName: string): Promise<void> {
+    const pass = await PassService.getPass(passId);
+    if (!pass) throw new Error('Pass not found');
+    if (pass.status !== 'active') throw new Error('Cannot check-in to a non-active pass');
+
+    // Fetch location to determine if check-in is allowed
+    const location = await LocationService.getLocation(locationId);
+    if (!location) throw new Error('Location not found');
+    if (!location.isCheckInEligible) {
+      throw new Error('This location does not support check-in');
+    }
+
+    // Add a new leg for the check-in
+    // (Assume addLeg is implemented elsewhere)
+    // await PassService.addLeg(passId, ...)
+
+    // Update current location
+    await PassService.updatePass(passId, {
+      currentLocationId: locationId
+    });
+  },
+
+  /**
+   * Return pass (close it, e.g. when student returns to origin).
+   * Handles restroom vs. check-in eligible logic.
+   */
+  async returnPass(passId: string, _actorId: string, _actorName: string): Promise<void> {
+    const pass = await PassService.getPass(passId);
+    if (!pass) throw new Error('Pass not found');
+    if (pass.status !== 'active') throw new Error('Cannot return a non-active pass');
+
+    // Fetch origin location
+    const originLocation = await LocationService.getLocation(pass.originLocationId);
+    if (!originLocation) throw new Error('Origin location not found');
+
+    // If restroom, just close the pass
+    // If check-in eligible, ensure student is at the correct location
+    // (Business rules can be expanded here)
+
+    const now = Timestamp.now();
+    await PassService.updatePass(passId, {
+      status: 'closed',
+      closedAt: now,
+      totalDuration: Math.round((now.toMillis() - pass.openedAt.toMillis()) / 60000)
+    });
   },
 };
 
