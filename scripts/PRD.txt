@@ -1,0 +1,191 @@
+# **EaglePass – Digital Hall Pass System**  
+*Functional Requirements (concise) – Rev 06 / 26 / 2025*
+
+---
+
+## 1  Pass Lifecycle
+| Step | Condition | Result |
+|------|-----------|--------|
+| **Start** | Student leaves scheduled location | `open out` leg |
+| **Check-in** | Location ≠ scheduled | `open in` leg (pass stays open) |
+| **Return** | Location = scheduled | `closed in` → pass ends |
+| **Restroom** | Not check-in eligible | Must return to origin |
+| **Parking Lot** | Staff/Admin issued only | No student initiation |
+
+*Exactly **one active pass** per student.*
+
+---
+
+## 2  Logging
+- **Immutable legs**: `timestamp, passId, studentId, locationId, actorId, direction, legNumber`  
+- **Durations** calculated at query time
+
+---
+
+## 3  Escalations
+| Level | Default | Notify |
+|-------|---------|--------|
+| `durationWarning` | 10 min | student, origin staff, current staff |
+| `durationAlert`   | 20 min | + admin |
+
+*Thresholds configurable (global / location / student).*
+
+---
+
+## 4  Location Responsibility
+```json
+location = {
+  locationId,
+  staffAssignments: [
+    { staffId, role, periods[] | null, isPrimary? }
+  ],
+  shared: true | false
+}
+```
+Staff may override location per period; planning periods can block passes.
+
+---
+
+## 5  Student Schedule
+```json
+periodAssignment = { periodId, staffId }
+```
+Location resolved via staff’s period location.  
+Edits forward-only; all changes logged.
+
+---
+
+## 6  Permission Hierarchy
+**Admin > Group Pass > Location > Student** (most restrictive wins)  
+Modes: **allow · require approval · block**
+
+---
+
+## 7  Groups & Group Passes
+- Positive / negative groups created by staff/admin  
+- Group pass overrides location/student rules unless an admin block exists  
+- Admin settings: auto-approve · pre-approve · notifications · cancel
+
+---
+
+## 8  Roles & Capabilities
+| Role | Key Actions |
+|------|-------------|
+| **Student** | Create / check-in / return; view own history |
+| **Teacher / Support** | Issue passes; override in own location; create groups; force “returned”; flag “Found w/o Pass”; full reporting |
+| **Admin** | Full CRUD; global settings; force-close; manage roles, groups, schedules; view/export logs |
+
+---
+
+## 9  Authentication
+- **Google SSO** (MVP) – domain-restricted  
+- Architecture ready for Microsoft SSO & email/password  
+- Unknown users → pending page → admin approval  
+- **Multi-role support** (e.g., admin + teacher)
+
+---
+
+## 10  Reporting
+- All staff: full reporting & CSV/Sheets export  
+- Pre-built filters: **Frequent Flyers · Stall Sitters · Period Heatmaps**  
+- Export warning re: PII
+
+---
+
+## 11  Data Import / Sync
+- Bulk CSV/Sheet for students, staff, locations, schedules  
+- Manual UI edits **+ optional REST API sync**  
+- Period change → auto force-close (unless `extendThroughPeriod`)  
+- Historical logs *immutable*
+
+---
+
+## 12  FERPA & Security
+- Role-based access; audit log of all actions  
+- Only users with legitimate educational interest may view student data  
+- Email alerts exclude PII; detailed data only in secure UI  
+- Data retention per district policy; deletion only by admin  
+- “Found w/o Pass” and all overrides recorded for audit
+
+---
+
+## 13  App Definition
+**Name:** **EaglePass**  
+**Tagline:** *“Simple, transparent student movement.”*
+
+---
+
+## 14  Tech Stack
+| Layer | Choice | Rationale |
+|-------|--------|-----------|
+| **Frontend** | React + Vite (TypeScript), PWA-ready; Tailwind CSS & shadcn/ui | Fast DX, easy theming, offline-capable |
+| **Backend** | Firebase (Cloud Firestore, Cloud Functions, Auth) | Serverless scale; tight SSO integration |
+| **Realtime** | Firestore listeners | Live dashboards without polling |
+| **Hosting / CDN** | Firebase Hosting + Cloudflare proxy | Global edge caching |
+| **Analytics** | BigQuery export + Data Studio templates | District-level insights |
+| **Mobile** | Installable PWA; optional React Native wrapper | Single codebase, app-store presence |
+
+---
+
+## 15  Database Schema (Firestore collections)
+- `passes/{id}` → summary doc (studentId, status, openedAt, closedAt)  
+- `legs/{passId}/{legId}` → immutable leg docs  
+- `students/{id}` · `staff/{id}` · `locations/{id}` · `groups/{id}` · `schedules/{term}`  
+- Composite indexes: `(studentId,status)` and `(locationId,openedAt)` for heatmaps
+
+---
+
+## 16  API Integrations
+| Type | Purpose | Status |
+|------|---------|--------|
+| **OIDC (SSO)** | Google Workspace ↔ Auth | MVP |
+| **OneRoster v1.2** | Roster import from any SIS | v1 |
+| **Clever / ClassLink** | Optional auto-sync | Backlog |
+| **Webhook / Events** | Push escalations to Slack, Teams, SMS | v1 |
+| **District SFTP** | Nightly CSV drop for schools without API | Fallback |
+
+---
+
+## 17  Design Style
+- **Mobile-first**, 100 % PWA; WCAG 2.1 AA contrast  
+- **Color-coded states** (green → yellow → red) mirror escalation timers  
+- Simple card-based layout; large touch targets ≥ 48 px  
+- Consistent lucide-react icons; motion fades for state changes  
+- Dark-mode by default; respects OS preference
+
+---
+
+## 18  Out-of-Scope (Won’t Build)
+- Bluetooth/iBeacon or CCTV location tracking  
+- Nurse, counseling or visitor-management modules  
+- Tardy slips & discipline consequence automation  
+- In-house payment processing or fee collection  
+- Hardware badge scanners / kiosks (integrate via API if district supplies)  
+- Parent messaging portal (handled by SIS)
+
+---
+
+## 19  Competitive Snapshot (MVP vs. Market Leaders)
+
+| Feature | **Securly Pass** | **Campus Workflow Suite** | **EaglePass (MVP)** |
+|---------|------------------|---------------------------|---------------------|
+| Daily & location pass limits | ✅ Built-in limits & “meet-up” blocks | ⚠️ Custom rules | ✅ Configurable thresholds |
+| Live dashboard | ✅ Auto-updating | ✅ Hall monitor view | ✅ Firestore realtime |
+| Appointment passes | ✅ Schedule & notify | ⚠️ Via attendance module | ⬜ Planned post-MVP |
+| Badge/kiosk scans | ⚙️ Kiosk mode only | ✅ ID badges & kiosks | ⬜ API hooks only |
+| SIS integration | ✅ Auto-provision SIS | ✅ Native (Infinite Campus) | ✅ OneRoster/Clever |
+| Lock-down “freeze all passes” | 🚫 Not listed | 🚫 Not listed | ✅ Global *Pass Freeze* toggle |
+| Pricing model | Per-student SaaS | Add-on to IC SIS | Flat-tier SaaS / site license |
+
+**Differentiators**  
+1. **Open data export** (BigQuery) without extra fees  
+2. **Code-enforced FERPA masking** in exports  
+3. **Pass Freeze** & period auto-close baked into lifecycle  
+4. Lightweight PWA—runs on any device, no dedicated kiosks
+
+---
+
+## 20  Next Research Items
+1. **Appointment Pass UX** – study Securly’s flow for friction points  
+2. **Barcode kiosk-less scans** (QR in PWA) to match Campus Workflow strength  
+3. **Behavioral analytics** – evaluate anomaly-detection APIs for frequent flyers

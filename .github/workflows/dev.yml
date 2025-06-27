@@ -1,0 +1,26 @@
+name: CI / Deploy to Dev
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          run_install: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Build web app
+        run: pnpm --filter web run build
+
+      - name: Deploy to Firebase Hosting (dev)
+        run: firebase deploy --only hosting --token ${{ secrets.FB_TOKEN }} 

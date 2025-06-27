@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "eaglepass",
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "description": "EaglePass monorepo",
+  "scripts": {}
+}
