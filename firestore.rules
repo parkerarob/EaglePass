@@ -43,6 +43,38 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.email.matches('.*@nhcs\\.net$');
     }
 
+    // Helper function to check if teacher has access to a location
+    function teacherHasLocationAccess(locationId) {
+      return isAdmin() || (isTeacher() && 
+        exists(/databases/$(database)/documents/staff/$(request.auth.uid)));
+    }
+
+    // Helper function to check if teacher has access to a student
+    function teacherHasStudentAccess(studentId) {
+      return isAdmin() || (isTeacher() && 
+        exists(/databases/$(database)/documents/students/$(studentId)) &&
+        get(/databases/$(database)/documents/students/$(studentId)).data.homeroom == 
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.homeroom);
+    }
+
+    // Helper function to validate pass data integrity
+    function isValidPassData() {
+      return request.resource.data.keys().hasAll(['studentId', 'originLocationId', 'destinationLocationId', 'status']) &&
+             request.resource.data.studentId is string &&
+             request.resource.data.originLocationId is string &&
+             request.resource.data.destinationLocationId is string &&
+             request.resource.data.status in ['active', 'closed', 'expired', 'cancelled'];
+    }
+
+    // Helper function to validate leg data integrity
+    function isValidLegData() {
+      return request.resource.data.keys().hasAll(['passId', 'studentId', 'locationId', 'direction']) &&
+             request.resource.data.passId is string &&
+             request.resource.data.studentId is string &&
+             request.resource.data.locationId is string &&
+             request.resource.data.direction in ['out', 'in'];
+    }
+
     // Users collection - stores user profiles
     match /users/{userId} {
       // Allow users to read their own profile
@@ -74,11 +106,12 @@ service cloud.firestore {
       allow read: if isTeacher() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'student';
     }
 
-    // Passes collection - will be used for hall pass management
+    // Passes collection - hall pass management
     match /passes/{passId} {
       // Students can create their own passes
       allow create: if isStudent() 
-        && request.resource.data.studentId == request.auth.uid;
+        && request.resource.data.studentId == request.auth.uid
+        && isValidPassData();
       
       // Students can read their own passes
       allow read: if isStudent() 
@@ -88,13 +121,49 @@ service cloud.firestore {
       allow update: if isStudent() 
         && resource.data.studentId == request.auth.uid
         && !('studentId' in request.resource.data.diff(resource.data).affectedKeys())
-        && !('createdAt' in request.resource.data.diff(resource.data).affectedKeys());
+        && !('createdAt' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('issuedById' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('issuedByName' in request.resource.data.diff(resource.data).affectedKeys());
       
-      // Teachers can read passes for their location/students
-      allow read: if isTeacherOrAdmin();
+      // Teachers can read passes for their assigned locations or students
+      allow read: if isTeacher() && (
+        teacherHasLocationAccess(resource.data.originLocationId) ||
+        teacherHasLocationAccess(resource.data.destinationLocationId) ||
+        teacherHasLocationAccess(resource.data.currentLocationId) ||
+        teacherHasStudentAccess(resource.data.studentId)
+      );
       
-      // Teachers can update passes (for check-in/approval)
-      allow update: if isTeacherOrAdmin();
+      // Teachers can update passes (for check-in/approval) for their locations
+      allow update: if isTeacher() && (
+        teacherHasLocationAccess(resource.data.originLocationId) ||
+        teacherHasLocationAccess(resource.data.destinationLocationId) ||
+        teacherHasLocationAccess(resource.data.currentLocationId) ||
+        teacherHasStudentAccess(resource.data.studentId)
+      );
+      
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Legs subcollection - movement records for each pass
+    match /passes/{passId}/legs/{legId} {
+      // Students can read legs for their own passes
+      allow read: if isStudent() && 
+        get(/databases/$(database)/documents/passes/$(passId)).data.studentId == request.auth.uid;
+      
+      // Teachers can read legs for passes in their locations
+      allow read: if isTeacher() && (
+        teacherHasLocationAccess(get(/databases/$(database)/documents/passes/$(passId)).data.originLocationId) ||
+        teacherHasLocationAccess(get(/databases/$(database)/documents/passes/$(passId)).data.destinationLocationId) ||
+        teacherHasLocationAccess(get(/databases/$(database)/documents/passes/$(passId)).data.currentLocationId) ||
+        teacherHasStudentAccess(get(/databases/$(database)/documents/passes/$(passId)).data.studentId)
+      );
+      
+      // Teachers can create legs for passes in their locations
+      allow create: if isTeacher() && (
+        teacherHasLocationAccess(request.resource.data.locationId) ||
+        teacherHasStudentAccess(get(/databases/$(database)/documents/passes/$(passId)).data.studentId)
+      ) && isValidLegData();
       
       // Admins have full access
       allow read, write: if isAdmin();
@@ -111,8 +180,16 @@ service cloud.firestore {
 
     // Staff collection - stores staff information
     match /staff/{staffId} {
-      // All approved users can read staff info
-      allow read: if isApproved();
+      // Staff can read their own info
+      allow read: if isOwner(staffId);
+      
+      // Teachers can read staff info for their department
+      allow read: if isTeacher() && 
+        get(/databases/$(database)/documents/staff/$(staffId)).data.department == 
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.department;
+      
+      // Admins can read all staff info
+      allow read: if isAdmin();
       
       // Only admins can modify staff
       allow write: if isAdmin();
@@ -123,8 +200,13 @@ service cloud.firestore {
       // Students can read their own info
       allow read: if isStudent() && studentId == request.auth.uid;
       
-      // Teachers and admins can read all student info
-      allow read: if isTeacherOrAdmin();
+      // Teachers can read students in their homeroom
+      allow read: if isTeacher() && 
+        get(/databases/$(database)/documents/students/$(studentId)).data.homeroom == 
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.homeroom;
+      
+      // Admins can read all student info
+      allow read: if isAdmin();
       
       // Only admins can modify student info
       allow write: if isAdmin();
@@ -132,8 +214,16 @@ service cloud.firestore {
 
     // Groups collection - for student groupings
     match /groups/{groupId} {
-      // All approved users can read groups
-      allow read: if isApproved();
+      // Students can read groups they belong to
+      allow read: if isStudent() && 
+        request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.studentIds;
+      
+      // Teachers can read groups they created or manage
+      allow read: if isTeacher() && 
+        get(/databases/$(database)/documents/groups/$(groupId)).data.createdById == request.auth.uid;
+      
+      // Admins can read all groups
+      allow read: if isAdmin();
       
       // Teachers and admins can create/modify groups
       allow write: if isTeacherOrAdmin();
@@ -141,8 +231,16 @@ service cloud.firestore {
 
     // Schedules collection - stores class schedules
     match /schedules/{scheduleId} {
-      // All approved users can read schedules
-      allow read: if isApproved();
+      // Students can read their own schedule
+      allow read: if isStudent() && 
+        get(/databases/$(database)/documents/schedules/$(scheduleId)).data.studentId == request.auth.uid;
+      
+      // Teachers can read schedules for their students
+      allow read: if isTeacher() && 
+        teacherHasStudentAccess(get(/databases/$(database)/documents/schedules/$(scheduleId)).data.studentId);
+      
+      // Admins can read all schedules
+      allow read: if isAdmin();
       
       // Only admins can modify schedules
       allow write: if isAdmin();
@@ -150,11 +248,18 @@ service cloud.firestore {
 
     // Reports collection - for analytics and reporting
     match /reports/{reportId} {
-      // Only teachers and admins can access reports
-      allow read: if isTeacherOrAdmin();
+      // Teachers can read reports they generated
+      allow read: if isTeacher() && 
+        get(/databases/$(database)/documents/reports/$(reportId)).data.generatedById == request.auth.uid;
       
-      // Only admins can create reports
-      allow write: if isAdmin();
+      // Admins can read all reports
+      allow read: if isAdmin();
+      
+      // Teachers and admins can create reports
+      allow create: if isTeacherOrAdmin();
+      
+      // Only admins can modify existing reports
+      allow update, delete: if isAdmin();
     }
 
     // Audit logs - for tracking system changes
@@ -187,11 +292,12 @@ service cloud.firestore {
         && !('userId' in request.resource.data.diff(resource.data).affectedKeys())
         && !('createdAt' in request.resource.data.diff(resource.data).affectedKeys());
       
-      // System can create notifications
-      allow create: if isTeacherOrAdmin();
+      // Teachers can create notifications for their students
+      allow create: if isTeacher() && 
+        teacherHasStudentAccess(request.resource.data.userId);
       
-      // Admins can read all notifications
-      allow read: if isAdmin();
+      // Admins can read and create all notifications
+      allow read, create: if isAdmin();
     }
 
     // Default deny rule for any other collections

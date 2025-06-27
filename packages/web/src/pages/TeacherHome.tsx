@@ -471,9 +471,10 @@ export default function TeacherHome() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Create Pass for Student</h3>
                 <form onSubmit={handleCreatePass} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Student ID</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="create-student-id">Student ID</label>
                     <input
                       type="text"
+                      id="create-student-id"
                       value={createPassForm.studentId}
                       onChange={(e) => setCreatePassForm({...createPassForm, studentId: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -481,9 +482,10 @@ export default function TeacherHome() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Student Name</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="create-student-name">Student Name</label>
                     <input
                       type="text"
+                      id="create-student-name"
                       value={createPassForm.studentName}
                       onChange={(e) => setCreatePassForm({...createPassForm, studentName: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -491,8 +493,9 @@ export default function TeacherHome() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Destination</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="create-destination">Destination</label>
                     <select
+                      id="create-destination"
                       value={createPassForm.destination}
                       onChange={(e) => setCreatePassForm({...createPassForm, destination: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -505,8 +508,9 @@ export default function TeacherHome() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="create-notes">Notes</label>
                     <textarea
+                      id="create-notes"
                       value={createPassForm.notes}
                       onChange={(e) => setCreatePassForm({...createPassForm, notes: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -543,9 +547,10 @@ export default function TeacherHome() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Flag Student Without Pass</h3>
                 <form onSubmit={handleFlagStudent} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Student ID</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="flag-student-id">Student ID</label>
                     <input
                       type="text"
+                      id="flag-student-id"
                       value={flagStudentForm.studentId}
                       onChange={(e) => setFlagStudentForm({...flagStudentForm, studentId: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -553,9 +558,10 @@ export default function TeacherHome() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Student Name</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="flag-student-name">Student Name</label>
                     <input
                       type="text"
+                      id="flag-student-name"
                       value={flagStudentForm.studentName}
                       onChange={(e) => setFlagStudentForm({...flagStudentForm, studentName: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
@@ -563,8 +569,9 @@ export default function TeacherHome() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="flag-notes">Notes</label>
                     <textarea
+                      id="flag-notes"
                       value={flagStudentForm.notes}
                       onChange={(e) => setFlagStudentForm({...flagStudentForm, notes: e.target.value})}
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
