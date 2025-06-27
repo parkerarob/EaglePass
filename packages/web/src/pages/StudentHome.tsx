@@ -122,18 +122,28 @@ export default function StudentHome() {
 
   // Accessibility: loading and error states
   if (authLoading || dataLoading) {
-    return <div className="flex justify-center items-center min-h-screen text-blue-700">Loading dashboard...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen text-blue-700">
+        Loading dashboard...
+      </div>
+    );
   }
+  
   if (dataError) {
-    return <div className="flex flex-col items-center min-h-screen text-red-600">{dataError}</div>;
+    return (
+      <div className="flex flex-col items-center min-h-screen text-red-600">
+        {dataError}
+      </div>
+    );
   }
 
   return (
-    <main className="max-w-md mx-auto p-4 sm:p-6 md:p-8 flex flex-col gap-6 min-h-screen bg-gray-50">
-      <header className="mb-2">
-        <h1 className="text-2xl font-bold text-center text-blue-900">Student Dashboard</h1>
-        <div className="text-center text-gray-600 text-sm">Welcome, {profile?.displayName}</div>
-      </header>
+    <div className="max-w-md mx-auto p-4 sm:p-6 md:p-8 flex flex-col gap-6">
+      {/* Page Header */}
+      <div className="text-center mb-4">
+        <h1 className="text-2xl font-bold text-blue-900">Student Dashboard</h1>
+        <p className="text-gray-600 text-sm">Welcome, {profile?.displayName}</p>
+      </div>
 
       {/* Current Pass Status */}
       <section aria-labelledby="current-pass-heading" className="bg-white rounded-lg shadow p-4 flex flex-col gap-2">
@@ -213,6 +223,6 @@ export default function StudentHome() {
           </ul>
         )}
       </section>
-    </main>
+    </div>
   );
 } 

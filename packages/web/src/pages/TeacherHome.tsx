@@ -208,407 +208,392 @@ export default function TeacherHome() {
   }
 
   if (authLoading || dataLoading) {
-    return <div className="flex justify-center items-center min-h-screen text-blue-700">Loading teacher dashboard...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen text-blue-700">
+        Loading teacher dashboard...
+      </div>
+    );
   }
 
   if (dataError) {
-    return <div className="flex flex-col items-center min-h-screen text-red-600">{dataError}</div>;
+    return (
+      <div className="flex flex-col items-center min-h-screen text-red-600">
+        {dataError}
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-gray-900">EaglePass Teacher</h1>
+    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="px-4 py-6 sm:px-0">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
+          <p className="mt-2 text-gray-600">
+            Monitor active passes and manage student movements
+          </p>
+        </div>
+
+        {/* Statistics Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">{activePasses.length}</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Active Passes</dt>
+                  </dl>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                {profile?.photoURL && (
-                  <img
-                    className="h-8 w-8 rounded-full"
-                    src={profile.photoURL}
-                    alt={profile.displayName}
-                  />
-                )}
-                <span className="text-sm font-medium text-gray-700">
-                  {profile?.displayName}
-                </span>
-                <span className="text-xs text-gray-500 capitalize">
-                  ({profile?.role})
-                </span>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">{escalationAlerts.filter(p => p.escalationLevel === 'warning').length}</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Warnings</dt>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">{escalationAlerts.filter(p => p.escalationLevel === 'alert').length}</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Alerts</dt>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                    <span className="text-white font-bold">{locations.length}</span>
+                  </div>
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Locations</dt>
+                  </dl>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Statistics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                      <span className="text-white font-bold">{activePasses.length}</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Active Passes</dt>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Escalation Overview */}
+        <div className="mb-6">
+          <EscalationStats />
+        </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                      <span className="text-white font-bold">{escalationAlerts.filter(p => p.escalationLevel === 'warning').length}</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Warnings</dt>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                      <span className="text-white font-bold">{escalationAlerts.filter(p => p.escalationLevel === 'alert').length}</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Alerts</dt>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                      <span className="text-white font-bold">{locations.length}</span>
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">Locations</dt>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Escalation Overview */}
-          <div className="mb-6">
-            <EscalationStats />
-          </div>
-
-          {/* Controls */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div>
-                  <label htmlFor="location-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                    Filter by Location
-                  </label>
-                  <select
-                    id="location-filter"
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="all">All Locations</option>
-                    {locations.map(location => (
-                      <option key={location.id} value={location.id}>
-                        {location.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={() => setShowCreatePassForm(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+        {/* Controls */}
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div>
+                <label htmlFor="location-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                  Filter by Location
+                </label>
+                <select
+                  id="location-filter"
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm"
                 >
-                  Create Pass
-                </Button>
-                <Button
-                  onClick={() => setShowFlagForm(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Flag Student
-                </Button>
+                  <option value="all">All Locations</option>
+                  {locations.map(location => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => setShowCreatePassForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Create Pass
+              </Button>
+              <Button
+                onClick={() => setShowFlagForm(true)}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Flag Student
+              </Button>
             </div>
           </div>
+        </div>
 
-          {/* Active Passes */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Active Passes ({filteredPasses.length})
-              </h2>
+        {/* Active Passes */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Active Passes ({filteredPasses.length})
+            </h2>
+          </div>
+          
+          {filteredPasses.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              No active passes found.
             </div>
-            
-            {filteredPasses.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">
-                No active passes found.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Student
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Destination
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Duration
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Destination
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Duration
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPasses.map((pass) => (
+                    <tr key={pass.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                              <span className="text-sm font-medium text-gray-700">
+                                {pass.studentName.charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {pass.studentName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {pass.studentId}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{pass.destinationLocationName}</div>
+                        <div className="text-sm text-gray-500">From: {pass.originLocationName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {getPassDuration(pass)} min
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <span className={`inline-block w-3 h-3 rounded-full ${getPassStatusColor(pass)} mr-2`}></span>
+                          <span className="text-sm text-gray-900 capitalize">
+                            {pass.escalationLevel || pass.status}
+                          </span>
+                          <EscalationBadge pass={pass} className="ml-2" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={() => handlePassAction(pass.id, 'check-in')}
+                            disabled={isPassActionLoading(pass.id, 'check-in')}
+                            className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1"
+                          >
+                            {isPassActionLoading(pass.id, 'check-in') ? '...' : 'Check-in'}
+                          </Button>
+                          <Button
+                            onClick={() => handlePassAction(pass.id, 'return')}
+                            disabled={isPassActionLoading(pass.id, 'return')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1"
+                          >
+                            {isPassActionLoading(pass.id, 'return') ? '...' : 'Return'}
+                          </Button>
+                          <Button
+                            onClick={() => handlePassAction(pass.id, 'override')}
+                            disabled={isPassActionLoading(pass.id, 'override')}
+                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1"
+                          >
+                            {isPassActionLoading(pass.id, 'override') ? '...' : 'Override'}
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredPasses.map((pass) => (
-                      <tr key={pass.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                <span className="text-sm font-medium text-gray-700">
-                                  {pass.studentName.charAt(0)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {pass.studentName}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {pass.studentId}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{pass.destinationLocationName}</div>
-                          <div className="text-sm text-gray-500">From: {pass.originLocationName}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {getPassDuration(pass)} min
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <span className={`inline-block w-3 h-3 rounded-full ${getPassStatusColor(pass)} mr-2`}></span>
-                            <span className="text-sm text-gray-900 capitalize">
-                              {pass.escalationLevel || pass.status}
-                            </span>
-                            <EscalationBadge pass={pass} className="ml-2" />
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <Button
-                              onClick={() => handlePassAction(pass.id, 'check-in')}
-                              disabled={isPassActionLoading(pass.id, 'check-in')}
-                              className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1"
-                            >
-                              {isPassActionLoading(pass.id, 'check-in') ? '...' : 'Check-in'}
-                            </Button>
-                            <Button
-                              onClick={() => handlePassAction(pass.id, 'return')}
-                              disabled={isPassActionLoading(pass.id, 'return')}
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1"
-                            >
-                              {isPassActionLoading(pass.id, 'return') ? '...' : 'Return'}
-                            </Button>
-                            <Button
-                              onClick={() => handlePassAction(pass.id, 'override')}
-                              disabled={isPassActionLoading(pass.id, 'override')}
-                              className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1"
-                            >
-                              {isPassActionLoading(pass.id, 'override') ? '...' : 'Override'}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Error Display */}
-          {formError && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-4">
-              <div className="text-sm text-red-700">{formError}</div>
-            </div>
-          )}
-
-          {/* Create Pass Modal */}
-          {showCreatePassForm && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div className="mt-3">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Create Pass for Student</h3>
-                  <form onSubmit={handleCreatePass} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Student ID</label>
-                      <input
-                        type="text"
-                        value={createPassForm.studentId}
-                        onChange={(e) => setCreatePassForm({...createPassForm, studentId: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Student Name</label>
-                      <input
-                        type="text"
-                        value={createPassForm.studentName}
-                        onChange={(e) => setCreatePassForm({...createPassForm, studentName: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Destination</label>
-                      <select
-                        value={createPassForm.destination}
-                        onChange={(e) => setCreatePassForm({...createPassForm, destination: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      >
-                        <option value="">Select destination</option>
-                        {locations.map(location => (
-                          <option key={location.id} value={location.id}>{location.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Notes</label>
-                      <textarea
-                        value={createPassForm.notes}
-                        onChange={(e) => setCreatePassForm({...createPassForm, notes: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                      <Button
-                        type="button"
-                        onClick={() => setShowCreatePassForm(false)}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-700"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={formLoading}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {formLoading ? 'Creating...' : 'Create Pass'}
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Flag Student Modal */}
-          {showFlagForm && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div className="mt-3">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Flag Student Without Pass</h3>
-                  <form onSubmit={handleFlagStudent} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Student ID</label>
-                      <input
-                        type="text"
-                        value={flagStudentForm.studentId}
-                        onChange={(e) => setFlagStudentForm({...flagStudentForm, studentId: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Student Name</label>
-                      <input
-                        type="text"
-                        value={flagStudentForm.studentName}
-                        onChange={(e) => setFlagStudentForm({...flagStudentForm, studentName: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Notes</label>
-                      <textarea
-                        value={flagStudentForm.notes}
-                        onChange={(e) => setFlagStudentForm({...flagStudentForm, notes: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                        rows={3}
-                        placeholder="Reason for flagging..."
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                      <Button
-                        type="button"
-                        onClick={() => setShowFlagForm(false)}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-700"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={formLoading}
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        {formLoading ? 'Flagging...' : 'Flag Student'}
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </main>
+
+        {/* Error Display */}
+        {formError && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="text-sm text-red-700">{formError}</div>
+          </div>
+        )}
+
+        {/* Create Pass Modal */}
+        {showCreatePassForm && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Create Pass for Student</h3>
+                <form onSubmit={handleCreatePass} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Student ID</label>
+                    <input
+                      type="text"
+                      value={createPassForm.studentId}
+                      onChange={(e) => setCreatePassForm({...createPassForm, studentId: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Student Name</label>
+                    <input
+                      type="text"
+                      value={createPassForm.studentName}
+                      onChange={(e) => setCreatePassForm({...createPassForm, studentName: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Destination</label>
+                    <select
+                      value={createPassForm.destination}
+                      onChange={(e) => setCreatePassForm({...createPassForm, destination: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      required
+                    >
+                      <option value="">Select destination</option>
+                      {locations.map(location => (
+                        <option key={location.id} value={location.id}>{location.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                    <textarea
+                      value={createPassForm.notes}
+                      onChange={(e) => setCreatePassForm({...createPassForm, notes: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      type="button"
+                      onClick={() => setShowCreatePassForm(false)}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-700"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={formLoading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {formLoading ? 'Creating...' : 'Create Pass'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Flag Student Modal */}
+        {showFlagForm && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Flag Student Without Pass</h3>
+                <form onSubmit={handleFlagStudent} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Student ID</label>
+                    <input
+                      type="text"
+                      value={flagStudentForm.studentId}
+                      onChange={(e) => setFlagStudentForm({...flagStudentForm, studentId: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Student Name</label>
+                    <input
+                      type="text"
+                      value={flagStudentForm.studentName}
+                      onChange={(e) => setFlagStudentForm({...flagStudentForm, studentName: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                    <textarea
+                      value={flagStudentForm.notes}
+                      onChange={(e) => setFlagStudentForm({...flagStudentForm, notes: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      rows={3}
+                      placeholder="Reason for flagging..."
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      type="button"
+                      onClick={() => setShowFlagForm(false)}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-700"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={formLoading}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {formLoading ? 'Flagging...' : 'Flag Student'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 
