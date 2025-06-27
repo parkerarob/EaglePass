@@ -12,6 +12,7 @@ jobs:
 
       - uses: pnpm/action-setup@v2
         with:
+          version: 10.12.4
           run_install: true
 
       - uses: actions/setup-node@v4
@@ -20,7 +21,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Build web app
-        run: pnpm --filter web run build
+        run: pnpm --filter @eaglepass/web run build
 
       - name: Deploy to Firebase Hosting (dev)
         run: firebase deploy --only hosting --token ${{ secrets.FB_TOKEN }} 
