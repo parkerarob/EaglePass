@@ -1,8 +1,202 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isApproved() {
+      return isAuthenticated() && getUserData().status == 'approved';
+    }
+    
+    function hasRole(role) {
+      return isApproved() && getUserData().role == role;
+    }
+    
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    function isTeacher() {
+      return hasRole('teacher');
+    }
+    
+    function isStudent() {
+      return hasRole('student');
+    }
+    
+    function isTeacherOrAdmin() {
+      return isTeacher() || isAdmin();
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidEmail() {
+      return isAuthenticated() && request.auth.token.email.matches('.*@nhcs\\.net$');
+    }
+
+    // Users collection - stores user profiles
+    match /users/{userId} {
+      // Allow users to read their own profile
+      allow read: if isOwner(userId);
+      
+      // Allow users to create their own profile (during signup)
+      allow create: if isOwner(userId) 
+        && isValidEmail()
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.domain == 'nhcs.net'
+        && request.resource.data.status == 'pending';
+      
+      // Allow users to update their own profile (limited fields)
+      allow update: if isOwner(userId) 
+        && isValidEmail()
+        && !('role' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('status' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('uid' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('email' in request.resource.data.diff(resource.data).affectedKeys());
+      
+      // Allow admins to read all user profiles
+      allow read: if isAdmin();
+      
+      // Allow admins to update user roles and status
+      allow update: if isAdmin() && userId != request.auth.uid; // Admins can't change their own status
+      
+      // Allow teachers to read student profiles only
+      allow read: if isTeacher() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'student';
+    }
+
+    // Passes collection - will be used for hall pass management
+    match /passes/{passId} {
+      // Students can create their own passes
+      allow create: if isStudent() 
+        && request.resource.data.studentId == request.auth.uid;
+      
+      // Students can read their own passes
+      allow read: if isStudent() 
+        && resource.data.studentId == request.auth.uid;
+      
+      // Students can update their own passes (limited fields)
+      allow update: if isStudent() 
+        && resource.data.studentId == request.auth.uid
+        && !('studentId' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('createdAt' in request.resource.data.diff(resource.data).affectedKeys());
+      
+      // Teachers can read passes for their location/students
+      allow read: if isTeacherOrAdmin();
+      
+      // Teachers can update passes (for check-in/approval)
+      allow update: if isTeacherOrAdmin();
+      
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Locations collection - stores school locations
+    match /locations/{locationId} {
+      // All approved users can read locations
+      allow read: if isApproved();
+      
+      // Only admins can modify locations
+      allow write: if isAdmin();
+    }
+
+    // Staff collection - stores staff information
+    match /staff/{staffId} {
+      // All approved users can read staff info
+      allow read: if isApproved();
+      
+      // Only admins can modify staff
+      allow write: if isAdmin();
+    }
+
+    // Students collection - stores student information
+    match /students/{studentId} {
+      // Students can read their own info
+      allow read: if isStudent() && studentId == request.auth.uid;
+      
+      // Teachers and admins can read all student info
+      allow read: if isTeacherOrAdmin();
+      
+      // Only admins can modify student info
+      allow write: if isAdmin();
+    }
+
+    // Groups collection - for student groupings
+    match /groups/{groupId} {
+      // All approved users can read groups
+      allow read: if isApproved();
+      
+      // Teachers and admins can create/modify groups
+      allow write: if isTeacherOrAdmin();
+    }
+
+    // Schedules collection - stores class schedules
+    match /schedules/{scheduleId} {
+      // All approved users can read schedules
+      allow read: if isApproved();
+      
+      // Only admins can modify schedules
+      allow write: if isAdmin();
+    }
+
+    // Reports collection - for analytics and reporting
+    match /reports/{reportId} {
+      // Only teachers and admins can access reports
+      allow read: if isTeacherOrAdmin();
+      
+      // Only admins can create reports
+      allow write: if isAdmin();
+    }
+
+    // Audit logs - for tracking system changes
+    match /audit/{auditId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+      
+      // System can write audit logs (no user writes allowed)
+      allow write: if false;
+    }
+
+    // Settings collection - global system settings
+    match /settings/{settingId} {
+      // All approved users can read settings
+      allow read: if isApproved();
+      
+      // Only admins can modify settings
+      allow write: if isAdmin();
+    }
+
+    // Notifications collection - for user notifications
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid;
+      
+      // Users can update their own notifications (mark as read)
+      allow update: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid
+        && !('userId' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('createdAt' in request.resource.data.diff(resource.data).affectedKeys());
+      
+      // System can create notifications
+      allow create: if isTeacherOrAdmin();
+      
+      // Admins can read all notifications
+      allow read: if isAdmin();
+    }
+
+    // Default deny rule for any other collections
     match /{document=**} {
-      allow read, write: if true; // TODO: tighten rules
+      allow read, write: if false;
     }
   }
 } 
