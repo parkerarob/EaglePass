@@ -24,4 +24,9 @@ jobs:
         run: pnpm --filter @eaglepass/web run build
 
       - name: Deploy to Firebase Hosting (dev)
-        run: firebase deploy --only hosting --token ${{ secrets.FB_TOKEN }} 
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        run: |
+          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}' > /tmp/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          firebase deploy --only hosting 
