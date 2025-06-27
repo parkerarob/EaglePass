@@ -31,6 +31,7 @@ import {
   type UpdatePassRequest,
   type UserRole,
   type UserStatus,
+  type PassStatus,
 } from './database';
 
 // ============================================================================
@@ -162,6 +163,35 @@ export const PassService = {
     return createDocument<Pass>(COLLECTIONS.PASSES, pass);
   },
 
+  /**
+   * Create a pass for a student (teacher override)
+   */
+  async createPassForStudent(passData: CreatePassRequest, teacherId: string, teacherName: string): Promise<string> {
+    // Close any existing active pass for the student
+    const activePasses = await PassService.getActivePassesForStudent(passData.studentId);
+    if (activePasses.length > 0) {
+      await PassService.returnPass(activePasses[0].id, teacherId, teacherName);
+    }
+    
+    const now = Timestamp.now();
+    const pass: Omit<Pass, 'id'> = {
+      ...passData,
+      status: 'active',
+      openedAt: now,
+      closedAt: null,
+      totalDuration: null,
+      currentLocationId: passData.destinationLocationId,
+      escalationLevel: null,
+      escalationTriggeredAt: null,
+      issuedById: teacherId,
+      issuedByName: teacherName,
+      isOverride: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    return createDocument<Pass>(COLLECTIONS.PASSES, pass);
+  },
+
   async getPass(passId: string): Promise<Pass | null> {
     return getDocumentById<Pass>(COLLECTIONS.PASSES, passId);
   },
@@ -172,6 +202,43 @@ export const PassService = {
       where('status', '==', 'active'),
       orderBy('openedAt', 'desc'),
     ]);
+  },
+
+  /**
+   * Get all active passes for a specific location
+   */
+  async getActivePassesForLocation(locationId: string): Promise<Pass[]> {
+    return getDocuments<Pass>(COLLECTIONS.PASSES, [
+      where('currentLocationId', '==', locationId),
+      where('status', '==', 'active'),
+      orderBy('openedAt', 'desc'),
+    ]);
+  },
+
+  /**
+   * Get all active passes (for teacher/admin overview)
+   */
+  async getAllActivePasses(): Promise<Pass[]> {
+    return getDocuments<Pass>(COLLECTIONS.PASSES, [
+      where('status', '==', 'active'),
+      orderBy('openedAt', 'desc'),
+    ]);
+  },
+
+  /**
+   * Get passes filtered by location (all statuses)
+   */
+  async getPassesByLocation(locationId: string, status?: PassStatus): Promise<Pass[]> {
+    const constraints: QueryConstraint[] = [
+      where('currentLocationId', '==', locationId),
+      orderBy('openedAt', 'desc'),
+    ];
+    
+    if (status) {
+      constraints.push(where('status', '==', status));
+    }
+    
+    return getDocuments<Pass>(COLLECTIONS.PASSES, constraints);
   },
 
   async updatePass(passId: string, updates: UpdatePassRequest): Promise<void> {
@@ -227,6 +294,36 @@ export const PassService = {
       closedAt: now,
       totalDuration: Math.round((now.toMillis() - pass.openedAt.toMillis()) / 60000)
     });
+  },
+
+  /**
+   * Flag a student found without a pass
+   * This creates a special pass record for tracking
+   */
+  async flagStudentWithoutPass(studentId: string, studentName: string, locationId: string, locationName: string, teacherId: string, teacherName: string, notes?: string): Promise<string> {
+    const now = Timestamp.now();
+    const pass: Omit<Pass, 'id'> = {
+      studentId,
+      studentName,
+      originLocationId: locationId,
+      originLocationName: locationName,
+      destinationLocationId: locationId,
+      destinationLocationName: locationName,
+      status: 'active',
+      openedAt: now,
+      closedAt: null,
+      totalDuration: null,
+      currentLocationId: locationId,
+      escalationLevel: 'alert',
+      escalationTriggeredAt: now,
+      issuedById: teacherId,
+      issuedByName: teacherName,
+      isOverride: true,
+      notes: notes || 'Found without pass',
+      createdAt: now,
+      updatedAt: now,
+    };
+    return createDocument<Pass>(COLLECTIONS.PASSES, pass);
   },
 };
 
@@ -352,6 +449,72 @@ export const RealtimeService = {
       where('studentId', '==', studentId),
       where('status', '==', 'active'),
       orderBy('openedAt', 'desc')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const passes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Pass[];
+      callback(passes);
+    });
+  },
+
+  /**
+   * Subscribe to all active passes (for teacher/admin overview)
+   */
+  subscribeToAllActivePasses(
+    callback: (passes: Pass[]) => void
+  ): () => void {
+    const q = query(
+      collection(db, COLLECTIONS.PASSES),
+      where('status', '==', 'active'),
+      orderBy('openedAt', 'desc')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const passes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Pass[];
+      callback(passes);
+    });
+  },
+
+  /**
+   * Subscribe to active passes for a specific location
+   */
+  subscribeToLocationPasses(
+    locationId: string,
+    callback: (passes: Pass[]) => void
+  ): () => void {
+    const q = query(
+      collection(db, COLLECTIONS.PASSES),
+      where('currentLocationId', '==', locationId),
+      where('status', '==', 'active'),
+      orderBy('openedAt', 'desc')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const passes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Pass[];
+      callback(passes);
+    });
+  },
+
+  /**
+   * Subscribe to passes with escalation alerts
+   */
+  subscribeToEscalationAlerts(
+    callback: (passes: Pass[]) => void
+  ): () => void {
+    const q = query(
+      collection(db, COLLECTIONS.PASSES),
+      where('escalationLevel', 'in', ['warning', 'alert']),
+      where('status', '==', 'active'),
+      orderBy('escalationTriggeredAt', 'desc')
     );
 
     return onSnapshot(q, (snapshot) => {
