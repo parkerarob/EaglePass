@@ -6,7 +6,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAuth } from './useAuth';
-import type { AuthState, UserProfile } from '../lib/auth';
+import { 
+  createMockUserProfile, 
+  createMockFirebaseUser, 
+  createMockAuthState 
+} from '../lib/test-utils';
+import type { AuthState } from '../lib/auth';
 
 // Mock the auth module before importing the hook
 vi.mock('../lib/auth', () => ({
@@ -17,49 +22,28 @@ vi.mock('../lib/auth', () => ({
 
 import { onAuthStateChange, signInWithGoogle, signOut } from '../lib/auth';
 
-const mockUserProfile: UserProfile = {
-  uid: 'user-123',
-  email: 'test@nhcs.net',
-  displayName: 'Test User',
-  photoURL: undefined,
-  domain: 'nhcs.net',
-  role: 'student',
-  status: 'approved',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  lastLoginAt: new Date(),
-  approvedBy: 'admin-123',
-  approvedAt: new Date(),
-};
-
-const mockFirebaseUser = {
-  uid: 'user-123',
-  email: 'test@nhcs.net',
-  displayName: 'Test User',
-  photoURL: null,
-  emailVerified: true,
-  isAnonymous: false,
-  metadata: {},
-  providerData: [],
-  refreshToken: '',
-  tenantId: null,
-  phoneNumber: null,
-  providerId: 'google.com',
-  delete: vi.fn(),
-  getIdToken: vi.fn(),
-  getIdTokenResult: vi.fn(),
-  reload: vi.fn(),
-  toJSON: vi.fn(),
-};
-
-const mockAuthState: AuthState = {
-  user: mockFirebaseUser,
-  profile: mockUserProfile,
-  loading: false,
-  error: null,
-};
-
 describe('useAuth', () => {
+  const mockUserProfile = createMockUserProfile({
+    uid: 'user-123',
+    email: 'test@nhcs.net',
+    displayName: 'Test User',
+    role: 'student',
+    status: 'approved',
+  });
+
+  const mockFirebaseUser = createMockFirebaseUser({
+    uid: 'user-123',
+    email: 'test@nhcs.net',
+    displayName: 'Test User',
+  });
+
+  const mockAuthState: AuthState = createMockAuthState({
+    user: mockFirebaseUser,
+    profile: mockUserProfile,
+    loading: false,
+    error: null,
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -197,10 +181,9 @@ describe('useAuth', () => {
     });
 
     // Test pending user
-    const pendingState = {
-      ...mockAuthState,
-      profile: { ...mockUserProfile, status: 'pending' as const }
-    };
+    const pendingState = createMockAuthState({
+      profile: createMockUserProfile({ status: 'pending' }),
+    });
 
     act(() => {
       authStateCallback(pendingState);
